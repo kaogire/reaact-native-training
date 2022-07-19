@@ -8,8 +8,10 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  ViewStyle,
 } from 'react-native';
 import Animated, {
+  Easing,
   interpolateColor,
   useAnimatedStyle,
   useDerivedValue,
@@ -24,6 +26,8 @@ const Home = () => {
   const {bottom, top} = useSafeAreaInsets();
   const [dirty, setDirty] = useState(false);
   const {keyboardShown} = useKeyboard();
+
+  const [value, setValue] = useState(false);
 
   useEffect(() => {
     if (textValue.length) {
@@ -45,7 +49,10 @@ const Home = () => {
     () => withTiming(keyboardShown ? 0 : 16, {duration: 300}),
     [keyboardShown],
   );
-  const bgColor = useDerivedValue(() => withTiming(dirty ? 1 : 0), [dirty]);
+  const bgColor = useDerivedValue(
+    () => withTiming(dirty ? 1 : 0, {duration: 300}),
+    [dirty],
+  );
 
   const buttonStyle = useAnimatedStyle(() => {
     const backgroundColor = interpolateColor(
@@ -66,6 +73,44 @@ const Home = () => {
     bgColor.value,
   ]);
 
+  const outer: ViewStyle = {
+    backgroundColor: value ? '#06C7CA' : '#eeeeee',
+    borderColor: '#06C7CA',
+    borderWidth: 0.5,
+    borderRadius: 20,
+    width: 35,
+    height: 20,
+  };
+
+  const inner: ViewStyle = {
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
+    borderColor: value ? '#06C7CA' : '#D0CECD',
+    borderWidth: 0.5,
+    width: 20,
+    height: 19,
+    position: 'absolute',
+    justifyContent: 'center',
+    alignItems: 'center',
+  };
+
+  const left = useDerivedValue(() => {
+    const leftie = withTiming(value ? 15 : 0, {
+      duration: 300,
+      easing: Easing.linear,
+    });
+    console.log(value);
+    console.log(leftie);
+    return leftie;
+  }, [value]);
+
+  const toggleStyle = useAnimatedStyle(
+    () => ({
+      transform: [{translateX: left.value}],
+    }),
+    [left.value],
+  );
+
   return (
     <View style={styles.root}>
       <KeyboardAvoidingView
@@ -78,6 +123,13 @@ const Home = () => {
             onChangeText={setTextValue}
             placeholder="Enter some text"
           />
+          <TouchableOpacity onPress={() => setValue(val => !val)}>
+            <View style={outer}>
+              <Animated.View style={[inner, toggleStyle]}>
+                <Text>v</Text>
+              </Animated.View>
+            </View>
+          </TouchableOpacity>
           <TouchableOpacity>
             <Animated.View style={[styles.button, buttonStyle]}>
               <Text>Button</Text>
