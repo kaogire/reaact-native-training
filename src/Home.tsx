@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -19,6 +19,10 @@ import Animated, {
 } from 'react-native-reanimated';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useKeyboard} from '@react-native-community/hooks';
+import BottomSheet, {
+  BottomSheetView,
+  useBottomSheetDynamicSnapPoints,
+} from '@gorhom/bottom-sheet';
 
 const Home = () => {
   const [isDarkMode] = useState(false);
@@ -99,8 +103,6 @@ const Home = () => {
       duration: 300,
       easing: Easing.linear,
     });
-    console.log(value);
-    console.log(leftie);
     return leftie;
   }, [value]);
 
@@ -110,6 +112,24 @@ const Home = () => {
     }),
     [left.value],
   );
+  useEffect(() => {
+    if (value) {
+      bottomSheetRef.current?.expand();
+    } else {
+      bottomSheetRef.current?.close();
+    }
+  }, [value]);
+
+  const initialSnapPoints = useMemo(() => ['CONTENT_HEIGHT'], []);
+
+  const bottomSheetRef = useRef<BottomSheet>(null);
+
+  const {
+    animatedContentHeight,
+    animatedSnapPoints,
+    animatedHandleHeight,
+    handleContentLayout,
+  } = useBottomSheetDynamicSnapPoints(initialSnapPoints);
 
   return (
     <View style={styles.root}>
@@ -118,24 +138,50 @@ const Home = () => {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
         <View style={[styles.container, {marginTop: top}]}>
-          <TextInput
-            value={textValue}
-            onChangeText={setTextValue}
-            placeholder="Enter some text"
-          />
-          <TouchableOpacity onPress={() => setValue(val => !val)}>
-            <View style={outer}>
-              <Animated.View style={[inner, toggleStyle]}>
-                <Text>v</Text>
-              </Animated.View>
-            </View>
-          </TouchableOpacity>
+          <View style={styles.content}>
+            <TextInput
+              value={textValue}
+              onChangeText={setTextValue}
+              placeholder="Enter some text"
+            />
+            <TouchableOpacity onPress={() => setValue(val => !val)}>
+              <View style={outer}>
+                <Animated.View style={[inner, toggleStyle]}>
+                  <Text>v</Text>
+                </Animated.View>
+              </View>
+            </TouchableOpacity>
+          </View>
           <TouchableOpacity>
             <Animated.View style={[styles.button, buttonStyle]}>
               <Text>Button</Text>
             </Animated.View>
           </TouchableOpacity>
         </View>
+        <BottomSheet
+          ref={bottomSheetRef}
+          handleHeight={animatedHandleHeight}
+          contentHeight={animatedContentHeight}
+          enablePanDownToClose
+          onClose={() => setValue(false)}
+          snapPoints={animatedSnapPoints}>
+          <BottomSheetView
+            style={styles.bottomSheet}
+            onLayout={handleContentLayout}>
+            <View style={{marginBottom: 44}}>
+              <Text>BottomSheet</Text>
+              <Text>BottomSheet</Text>
+              <Text>BottomSheet</Text>
+              <Text>BottomSheet</Text>
+              <Text>BottomSheet</Text>
+              <TouchableOpacity
+                style={styles.button}
+                onPress={() => setValue(false)}>
+                <Text>Close</Text>
+              </TouchableOpacity>
+            </View>
+          </BottomSheetView>
+        </BottomSheet>
       </KeyboardAvoidingView>
     </View>
   );
@@ -143,15 +189,22 @@ const Home = () => {
 
 const styles = StyleSheet.create({
   root: {flex: 1},
+  bottomSheet: {
+    paddingHorizontal: 16,
+  },
   container: {
-    marginHorizontal: 16,
     justifyContent: 'space-between',
     flexDirection: 'column',
     flex: 1,
   },
+  content: {
+    flex: 1,
+    justifyContent: 'space-evenly',
+    marginHorizontal: 16,
+  },
   button: {
     backgroundColor: '#DC1F5C',
-    height: 70,
+    height: 48,
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
